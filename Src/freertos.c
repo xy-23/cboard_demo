@@ -49,6 +49,7 @@
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId canTaskHandle;
+osThreadId ledTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -57,6 +58,7 @@ osThreadId canTaskHandle;
 
 void StartDefaultTask(void const * argument);
 extern void can_task(void const * argument);
+extern void led_task(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -111,6 +113,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of canTask */
   osThreadDef(canTask, can_task, osPriorityIdle, 0, 128);
   canTaskHandle = osThreadCreate(osThread(canTask), NULL);
+
+  /* definition and creation of ledTask */
+  osThreadDef(ledTask, led_task, osPriorityIdle, 0, 128);
+  ledTaskHandle = osThreadCreate(osThread(ledTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
