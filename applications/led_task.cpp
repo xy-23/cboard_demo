@@ -1,12 +1,21 @@
 #include "cmsis_os.h"
 #include "io/led/led.hpp"
 
+io::LED led(&htim5);
+
 extern "C" void led_task()
 {
-  io::Led rgb(&htim5);
-  rgb.set(0, 65535, 0);
+  led.start();
 
   while (true) {
-    osDelay(1000);
+    for (uint8_t g = 0; g < 10; g++) {
+      led.set(0, g * 0.01f, 0);
+      osDelay(100);
+    }
+
+    for (uint8_t g = 10; g > 0; g--) {
+      led.set(0, g * 0.01f, 0);
+      osDelay(100);
+    }
   }
 }
