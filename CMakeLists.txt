@@ -54,6 +54,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     sp_middleware/io/led/led.cpp
     sp_middleware/io/buzzer/buzzer.cpp
+    sp_middleware/io/can/can.cpp
+    
+    sp_middleware/motor/rm_motor/rm_motor.cpp
 )
 
 # Add include paths
