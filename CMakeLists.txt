@@ -51,10 +51,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     applications/led_task.cpp
     applications/buzzer_task.cpp
     applications/can_task.cpp
+    applications/imu_task.cpp
 
     sp_middleware/io/led/led.cpp
     sp_middleware/io/buzzer/buzzer.cpp
     sp_middleware/io/can/can.cpp
+    sp_middleware/io/bmi088/bmi088.cpp
     
     sp_middleware/motor/rm_motor/rm_motor.cpp
 )
