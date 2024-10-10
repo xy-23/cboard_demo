@@ -1,27 +1,23 @@
 #include "cmsis_os.h"
 #include "io/bmi088/bmi088.hpp"
 #include "io/plotter/plotter.hpp"
+#include "tools/mahony/mahony.hpp"
 
-io::Plotter plotter(&huart1);
-io::BMI088 bmi088(&hspi1, GPIOA, GPIO_PIN_4, GPIOB, GPIO_PIN_0);
+const float r_ab[3][3] = {{0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 
-int plot_cnt = 0;
+io::BMI088 bmi088(&hspi1, GPIOA, GPIO_PIN_4, GPIOB, GPIO_PIN_0, r_ab);
+tools::Mahony imu(1e-3f);
 
 extern "C" void imu_task()
 {
-  osDelay(100);
   bmi088.init();
 
   while (true) {
     bmi088.update();
-    osDelay(1);
+    imu.update(bmi088.acc, bmi088.gyro);
 
-    if (plot_cnt == 10) {
-      plot_cnt = 0;
-      plotter.plot(
-        bmi088.acc[0], bmi088.acc[1], bmi088.acc[2], bmi088.gyro[0], bmi088.gyro[1],
-        bmi088.gyro[2]);
-    }
-    plot_cnt++;
+    // 使用调试(f5)查看bmi088和imu内部变量的变化
+
+    osDelay(1);
   }
 }
