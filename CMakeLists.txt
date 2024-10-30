@@ -63,9 +63,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     
     sp_middleware/motor/rm_motor/rm_motor.cpp
 
+    sp_middleware/referee/pm02/pm02.cpp
+
     sp_middleware/tools/math_tools/math_tools.cpp
     sp_middleware/tools/pid/pid.cpp
     sp_middleware/tools/mahony/mahony.cpp
+    sp_middleware/tools/crc/crc.cpp
 )
 
 # Add include paths

@@ -1,18 +1,16 @@
 #include "cmsis_os.h"
 #include "io/dbus/dbus.hpp"
+#include "referee/pm02/pm02.hpp"
 
-// C板
 sp::DBus remote(&huart3);
-
-// 达妙
-// sp::DBus remote(&huart5, false);
+sp::PM02 pm02(&huart6);
 
 extern "C" void uart_task()
 {
   remote.request();
+  pm02.request();
 
   while (true) {
-    // 使用调试(f5)查看remote内部变量的变化
     osDelay(10);
   }
 }
@@ -25,11 +23,18 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * huart, uint16_t 
     remote.update(osKernelSysTick());
     remote.request();
   }
+  else if (huart == &huart6) {
+    pm02.update();
+    pm02.request();
+  }
 }
 
 extern "C" void HAL_UART_ErrorCallback(UART_HandleTypeDef * huart)
 {
   if (huart == &huart3) {
     remote.request();
+  }
+  else if (huart == &huart6) {
+    pm02.request();
   }
 }
