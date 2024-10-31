@@ -2,23 +2,30 @@
 #include "io/can/can.hpp"
 #include "motor/rm_motor/rm_motor.hpp"
 
-sp::CAN can1(&hcan1);
+extern sp::RM_Motor motor_yaw;
+
+sp::CAN can2(&hcan2);
 
 extern "C" void can_task()
 {
-  can1.config();
-  can1.start();
+  can2.config();
+  can2.start();
 
   while (true) {
+    motor_yaw.write(can2.tx_data);
+    can2.send(motor_yaw.tx_id);
+
     osDelay(1);
   }
 }
 
 extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 {
-  // auto stamp_ms = osKernelSysTick();
+  auto stamp_ms = osKernelSysTick();
 
-  if (hcan == &hcan1) {
-    can1.recv();
+  if (hcan == &hcan2) {
+    can2.recv();
+
+    if (can2.rx_id == motor_yaw.rx_id) motor_yaw.read(can2.rx_data, stamp_ms);
   }
 }
