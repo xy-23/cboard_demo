@@ -7,13 +7,14 @@
 extern sp::BMI088 bmi088;
 extern sp::Mahony imu;
 extern sp::RM_Motor motor_yaw;
+extern float cmd_voltage;
 
 sp::Plotter plotter(&huart1);
 
 extern "C" void plot_task()
 {
   while (true) {
-    plotter.plot(imu.yaw, bmi088.gyro[2], motor_yaw.angle, motor_yaw.speed);
+    plotter.plot(cmd_voltage, motor_yaw.angle, motor_yaw.speed, motor_yaw.torque);
     osDelay(10);
   }
 }
