@@ -17,14 +17,12 @@ extern "C" void uart_task()
 
 extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * huart, uint16_t Size)
 {
-  UNUSED(Size);
-
   if (huart == &huart3) {
     remote.update(osKernelSysTick());
     remote.request();
   }
   else if (huart == &huart6) {
-    pm02.update();
+    pm02.update(Size);
     pm02.request();
   }
 }

@@ -8,8 +8,8 @@ sp::CAN can2(&hcan2);
 
 extern "C" void can_task()
 {
-  can2.config();
-  can2.start();
+  // can2.config();
+  // can2.start();
 
   while (true) {
     motor_yaw.write(can2.tx_data);
