@@ -43,12 +43,14 @@ extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 {
   auto stamp_ms = osKernelSysTick();
 
-  if (hcan == &hcan1) {
-    can1.recv();
+  while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0) {
+    if (hcan == &hcan1) {
+      can1.recv();
 
-    if (can1.rx_id == motor_l.rx_id)
-      motor_l.read(can1.rx_data, stamp_ms);
-    else if (can1.rx_id == motor_r.rx_id)
-      motor_r.read(can1.rx_data, stamp_ms);
+      if (can1.rx_id == motor_l.rx_id)
+        motor_l.read(can1.rx_data, stamp_ms);
+      else if (can1.rx_id == motor_r.rx_id)
+        motor_r.read(can1.rx_data, stamp_ms);
+    }
   }
 }
