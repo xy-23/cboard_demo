@@ -63,6 +63,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     sp_middleware/io/dbus/dbus.cpp
     
     sp_middleware/motor/rm_motor/rm_motor.cpp
+    sp_middleware/motor/dm_motor/dm_motor.cpp
 
     sp_middleware/referee/pm02/pm02.cpp
     sp_middleware/referee/vt02/vt02.cpp
