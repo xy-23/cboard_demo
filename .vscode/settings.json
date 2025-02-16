@@ -1,20 +1,6 @@
 {
     "files.associations": {
         "*.h": "c",
-        "compare": "cpp",
-        "cmath": "cpp",
-        "concepts": "cpp",
-        "cstdarg": "cpp",
-        "cstddef": "cpp",
-        "cstdint": "cpp",
-        "cstdio": "cpp",
-        "cstdlib": "cpp",
-        "cstring": "cpp",
-        "type_traits": "cpp",
-        "limits": "cpp",
-        "new": "cpp",
-        "*.tcc": "cpp",
-        "typeinfo": "cpp"
     },
     "editor.formatOnSave": true,
     "[c]": {

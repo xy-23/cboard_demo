@@ -27,11 +27,11 @@ extern "C" void uart_task()
     ui_manager.set_sender_id(pm02.robot_status.robot_id);  // e.g. sp::referee::robot_id::RED_HERO
 
     ui_manager.pack(&str);
-    pm02.send(ui_manager.data, ui_manager.size);
+    pm02.send(ui_manager.data(), ui_manager.size());
     osDelay(33);
 
     ui_manager.pack(&line, &rect, &circle, &ellipse, &arc, &float_num, &int_num);
-    pm02.send(ui_manager.data, ui_manager.size);
+    pm02.send(ui_manager.data(), ui_manager.size());
     osDelay(33);
   }
 }
