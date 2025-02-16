@@ -24,7 +24,8 @@ extern "C" void uart_task()
   pm02.request();
 
   while (true) {
-    ui_manager.set_sender_id(pm02.robot_status.robot_id);  // e.g. sp::referee::robot_id::RED_HERO
+    ui_manager.set_sender_id(sp::referee::robot_id::RED_HERO);  // 南航模拟器
+    // ui_manager.set_sender_id(pm02.robot_status.robot_id);       // 官方裁判系统
 
     ui_manager.pack(&str);
     pm02.send(ui_manager.data(), ui_manager.size());
