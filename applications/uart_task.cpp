@@ -18,22 +18,33 @@ Float float_num(Layer::LAYER_5, Color::PINK, 6, 300, 300, 60, 3.14);
 Integer int_num(Layer::LAYER_6, Color::CYAN, 7, 300, 400, 70, 42);
 String str(Layer::LAYER_7, Color::BLACK, 8, 300, 500, 80, "Hello, World!");
 
+int int_num_value = 0;
+
 extern "C" void uart_task()
 {
   remote.request();
   pm02.request();
 
+  ui_manager.set_sender_id(sp::referee::robot_id::RED_HERO);  // 南航模拟器
+  // ui_manager.set_sender_id(pm02.robot_status.robot_id);  // 官方裁判系统(建议放在循环里)
+
+  ui_manager.delete_all();
+  pm02.send(ui_manager.data(), ui_manager.size());
+  osDelay(33);
+
+  ui_manager.pack(&str);
+  pm02.send(ui_manager.data(), ui_manager.size());
+  osDelay(33);
+
   while (true) {
-    ui_manager.set_sender_id(sp::referee::robot_id::RED_HERO);  // 南航模拟器
-    // ui_manager.set_sender_id(pm02.robot_status.robot_id);  // 官方裁判系统
-
-    ui_manager.pack(&str);
-    pm02.send(ui_manager.data(), ui_manager.size());
-    osDelay(33);
-
     ui_manager.pack(&line, &rect, &circle, &ellipse, &arc, &float_num, &int_num);
     pm02.send(ui_manager.data(), ui_manager.size());
     osDelay(33);
+
+    // 南航模拟器显示更新好像不及时, 但是对应数值在properties面板中能看到
+    int_num_value++;
+    int_num.set_value(int_num_value);
+    int_num.set_operate_type(OperateType::MODIFY);
   }
 }
 
