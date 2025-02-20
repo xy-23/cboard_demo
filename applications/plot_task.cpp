@@ -16,7 +16,7 @@ sp::Plotter plotter(&huart1);
 extern "C" void plot_task()
 {
   while (true) {
-    plotter.plot(imu.yaw, motor_yaw.angle, bmi088.gyro[2], motor_yaw.speed);
+    plotter.plot(bmi088.temp);
     osDelay(10);
   }
 }
