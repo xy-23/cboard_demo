@@ -1,12 +1,13 @@
 {
     "files.associations": {
         "*.h": "c",
+        "compare": "cpp"
     },
     "editor.formatOnSave": true,
     "[c]": {
         "editor.formatOnSave": false,
     },
-    "cortex-debug.variableUseNaturalFormat": true,
+    "cortex-debug.variableUseNaturalFormat": false,
     "cmake.configureOnOpen": true,
     "cmake.options.advanced": {
         "configurePreset": {

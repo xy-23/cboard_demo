@@ -64,6 +64,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     
     sp_middleware/motor/rm_motor/rm_motor.cpp
     sp_middleware/motor/dm_motor/dm_motor.cpp
+    sp_middleware/motor/lk_motor/lk_motor.cpp
 
     sp_middleware/referee/pm02/pm02.cpp
     sp_middleware/referee/ui/element.cpp
