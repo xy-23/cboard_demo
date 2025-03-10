@@ -75,6 +75,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     sp_middleware/tools/pid/pid.cpp
     sp_middleware/tools/mahony/mahony.cpp
     sp_middleware/tools/crc/crc.cpp
+    sp_middleware/tools/diff_drive/diff_drive.cpp
 )
 
 # Add include paths
