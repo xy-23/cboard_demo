@@ -22,19 +22,17 @@ extern sp::LK_Motor motor_r;
 
 extern sp::DiffDrive diff_drive;
 
-sp::Plotter plotter(&huart1);
-
-float power_computed = 0;
+extern float power_computed;
+extern float left_torque_set;
+extern float right_torque_set;
 
 extern "C" void plot_task()
 {
+  sp::Plotter plotter(&huart1);
+
   while (true) {
-    // plotter.plot(motor_l_speed_pid.data.set, motor_l_speed_pid.data.fdb, motor_l_speed_pid.out);
-    // plotter.plot(motor_r_speed_pid.data.set, motor_r_speed_pid.data.fdb, motor_r_speed_pid.out);
+    plotter.plot(pm02.power_heat.reserved_3, power_computed, motor_l.torque, left_torque_set, motor_l.speed);
 
-    power_computed = motor_l.torque * motor_l.speed + motor_r.torque * motor_r.speed;
-
-    plotter.plot(pm02.power_heat.reserved_3, power_computed, diff_drive.v, diff_drive.w);
     osDelay(10);
   }
 }

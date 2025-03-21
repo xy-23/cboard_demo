@@ -10,6 +10,8 @@ constexpr float T = 1e-3f;   // s
 constexpr float R = 0.06f;   // m
 constexpr float W = 0.435f;  // m
 
+constexpr float MAX_MOTOR_POWER = 60.0f;  // W
+
 extern sp::DBus remote;
 
 sp::CAN can1(&hcan1);
@@ -22,6 +24,10 @@ sp::PID motor_l_speed_pid(T, 1, 0, 0, 5, 5);
 sp::PID motor_r_speed_pid(T, 1, 0, 0, 5, 5);
 
 sp::DiffDrive diff_drive(W / 2, R, true, false);
+
+float power_computed = 0.0f;
+float left_torque_set = 0.0f;
+float right_torque_set = 0.0f;
 
 extern "C" void can_task()
 {
@@ -38,13 +44,23 @@ extern "C" void can_task()
     motor_l_speed_pid.calc(diff_drive.speed_l, motor_l.speed);
     motor_r_speed_pid.calc(diff_drive.speed_r, motor_r.speed);
 
+    left_torque_set = (motor_l_speed_pid.out * motor_l.speed > MAX_MOTOR_POWER)
+                        ? MAX_MOTOR_POWER / motor_l.speed
+                        : motor_l_speed_pid.out;
+
+    right_torque_set = (motor_r_speed_pid.out * motor_r.speed > MAX_MOTOR_POWER)
+                         ? MAX_MOTOR_POWER / motor_r.speed
+                         : motor_r_speed_pid.out;
+
+    power_computed = left_torque_set * motor_l.speed + right_torque_set * motor_r.speed;
+
     if (remote.sw_r == sp::DBusSwitchMode::DOWN) {
       motor_l.cmd(0);
       motor_r.cmd(0);
     }
     else {
-      motor_l.cmd(motor_l_speed_pid.out);
-      motor_r.cmd(motor_r_speed_pid.out);
+      motor_l.cmd(left_torque_set);
+      motor_r.cmd(right_torque_set);
     }
 
     motor_l.write(can1.tx_data);
