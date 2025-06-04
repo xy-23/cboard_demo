@@ -2,12 +2,14 @@
 #include "io/can/can.hpp"
 #include "io/dbus/dbus.hpp"
 #include "motor/rm_motor/rm_motor.hpp"
+#include "referee/pm02/pm02.hpp"
 #include "tools/pid/pid.hpp"
 
 constexpr float T_CONTROL = 1e-3f;    // 控制周期, 单位: s
 constexpr float FRIC_SPEED = 600.0f;  //21.5-21.8
 
 extern sp::DBus remote;
+extern sp::PM02 pm02;
 
 sp::CAN can1(&hcan1);
 sp::CAN can2(&hcan2);
@@ -21,7 +23,20 @@ sp::PID fric_motor_r_pid(T_CONTROL, 0.0025f, 0.0000f, 0.000005f, 0.4f, 0.1f, 0.8
 
 sp::PID trigger_speed_pid(T_CONTROL, 0.6f, 0.15f, 0.001f, 2.0f, 0.37f, 0.25f, false);
 
-float trigger_target_speed = 10.0f;
+// DRAGON
+//射击
+//射击的射频 发/S
+float shoot_speed;
+//每次射击已经射出多少发
+float shoot_num = 0;
+//100ms计时器
+float time_100ms = 0;
+uint8_t time_plus_c = 0;
+float m = 0.0f;
+float trigger_angle = 0.0f;
+uint8_t first_in_flag = 1;
+
+float debug_data = 0;
 
 extern "C" void can_task()
 {
@@ -33,7 +48,54 @@ extern "C" void can_task()
 
   while (true) {
     if (remote.sw_r == sp::DBusSwitchMode::UP) {
-      trigger_speed_pid.calc(trigger_target_speed, trigger_motor.speed);
+      float a = (float)pm02.robot_status.shooter_barrel_cooling_value;
+      float d = 10.0f;
+      float heat_remain = (float)(pm02.robot_status.shooter_barrel_heat_limit -
+                  pm02.power_heat.shooter_17mm_1_barrel_heat);
+
+      if (a >= 170) {
+        shoot_speed = 17 * 2 * sp::PI / 7;
+      }
+      else {
+        shoot_num += trigger_motor.speed / 1000.0f * 7 / 2.0f / sp::PI;
+        if (time_plus_c == 100) {
+          time_plus_c = 0;
+          time_100ms += 1;
+        }
+        time_plus_c += 1;
+        if(first_in_flag == 0 && heat_remain > 60){
+          m = heat_remain;
+          first_in_flag = 1;
+        }
+        debug_data = -(10 * (d * shoot_num - m + 0 * d) / a + 1) + (time_100ms - 2);
+        if (((10 * (d * shoot_num - m + 0 * d) / a + 1) <= (time_100ms - 2)) && first_in_flag == 1) {
+          shoot_speed = 17 * 2 * sp::PI / 7.0f;
+        }
+        else {
+          if ((10 * (d * shoot_num - m + 2 * d) / a + 1) >= (time_100ms - 2)){
+            shoot_speed = (a - 5.0f) / d / (7 / 2.0f / sp::PI);
+          }
+          else{
+            shoot_speed = (a - 1.0f) / d / (7 / 2.0f / sp::PI);
+          }
+          first_in_flag = 0;
+        }
+      }
+    }
+    else {
+      m = (float)(pm02.robot_status.shooter_barrel_heat_limit -
+                  pm02.power_heat.shooter_17mm_1_barrel_heat);
+      shoot_speed = 0;
+      shoot_num = 0;
+      time_100ms = 0;
+      time_plus_c = 0;
+      first_in_flag = 1;
+      trigger_angle = trigger_motor.angle;
+      debug_data = 0;
+    }
+
+    if (remote.sw_r == sp::DBusSwitchMode::UP) {
+      trigger_speed_pid.calc(shoot_speed, trigger_motor.speed);
       trigger_motor.cmd(trigger_speed_pid.out);
     }
     else {
