@@ -1,33 +1,27 @@
 #include "cmsis_os.h"
 #include "io/can/can.hpp"
 #include "io/dbus/dbus.hpp"
-#include "motor/lk_motor/lk_motor.hpp"
 #include "motor/rm_motor/rm_motor.hpp"
-#include "tools/diff_drive/diff_drive.hpp"
 #include "tools/pid/pid.hpp"
 
-constexpr float T = 1e-3f;   // s
-constexpr float R = 0.06f;   // m
-constexpr float W = 0.435f;  // m
-
-constexpr float MAX_MOTOR_POWER = 60.0f;  // W
+constexpr float T_CONTROL = 1e-3f;    // 控制周期, 单位: s
+constexpr float FRIC_SPEED = 600.0f;  //21.5-21.8
 
 extern sp::DBus remote;
 
 sp::CAN can1(&hcan1);
 sp::CAN can2(&hcan2);
 
-sp::LK_Motor motor_l(1);
-sp::LK_Motor motor_r(2);
+sp::RM_Motor fric_motor_l(1, sp::RM_Motors::M3508, 1);
+sp::RM_Motor fric_motor_r(2, sp::RM_Motors::M3508, 1);
+sp::RM_Motor trigger_motor(3, sp::RM_Motors::M2006, sp::M2006_P36);
 
-sp::PID motor_l_speed_pid(T, 1, 0, 0, 5, 5);
-sp::PID motor_r_speed_pid(T, 1, 0, 0, 5, 5);
+sp::PID fric_motor_l_pid(T_CONTROL, 0.0025f, 0.0000f, 0.000005f, 0.4f, 0.1f, 0.8f);
+sp::PID fric_motor_r_pid(T_CONTROL, 0.0025f, 0.0000f, 0.000005f, 0.4f, 0.1f, 0.8f);
 
-sp::DiffDrive diff_drive(W / 2, R, true, false);
+sp::PID trigger_speed_pid(T_CONTROL, 0.6f, 0.15f, 0.001f, 2.0f, 0.37f, 0.25f, false);
 
-float power_computed = 0.0f;
-float left_torque_set = 0.0f;
-float right_torque_set = 0.0f;
+float trigger_target_speed = 10.0f;
 
 extern "C" void can_task()
 {
@@ -38,34 +32,26 @@ extern "C" void can_task()
   can2.start();
 
   while (true) {
-    diff_drive.update(motor_l.speed, motor_r.speed);
-    diff_drive.calc(remote.ch_rv * 2, -remote.ch_lh * 13);
-
-    motor_l_speed_pid.calc(diff_drive.speed_l, motor_l.speed);
-    motor_r_speed_pid.calc(diff_drive.speed_r, motor_r.speed);
-
-    left_torque_set = (motor_l_speed_pid.out * motor_l.speed > MAX_MOTOR_POWER)
-                        ? MAX_MOTOR_POWER / motor_l.speed
-                        : motor_l_speed_pid.out;
-
-    right_torque_set = (motor_r_speed_pid.out * motor_r.speed > MAX_MOTOR_POWER)
-                         ? MAX_MOTOR_POWER / motor_r.speed
-                         : motor_r_speed_pid.out;
-
-    power_computed = left_torque_set * motor_l.speed + right_torque_set * motor_r.speed;
-
-    if (remote.sw_r == sp::DBusSwitchMode::DOWN) {
-      motor_l.cmd(0);
-      motor_r.cmd(0);
+    if (remote.sw_r == sp::DBusSwitchMode::UP) {
+      trigger_speed_pid.calc(trigger_target_speed, trigger_motor.speed);
+      trigger_motor.cmd(trigger_speed_pid.out);
     }
     else {
-      motor_l.cmd(left_torque_set);
-      motor_r.cmd(right_torque_set);
+      trigger_motor.cmd(0);
     }
 
-    motor_l.write(can1.tx_data);
-    motor_r.write(can1.tx_data);
-    can1.send(motor_l.tx_id);
+    fric_motor_l_pid.calc(
+      remote.sw_r == sp::DBusSwitchMode::DOWN ? 0 : -FRIC_SPEED, fric_motor_l.speed);
+    fric_motor_r_pid.calc(
+      remote.sw_r == sp::DBusSwitchMode::DOWN ? 0 : FRIC_SPEED, fric_motor_r.speed);
+
+    fric_motor_l.cmd(fric_motor_l_pid.out);
+    fric_motor_r.cmd(fric_motor_r_pid.out);
+
+    fric_motor_l.write(can1.tx_data);
+    fric_motor_r.write(can1.tx_data);
+    trigger_motor.write(can1.tx_data);
+    can1.send(trigger_motor.tx_id);
 
     osDelay(1);
   }
@@ -73,17 +59,21 @@ extern "C" void can_task()
 
 extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
 {
-  // auto stamp_ms = osKernelSysTick();
+  auto stamp_ms = osKernelSysTick();
 
   while (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) > 0) {
     if (hcan == &hcan1) {
       can1.recv();
 
-      if (can1.rx_id == motor_l.rx_id)
-        motor_l.read(can1.rx_data);
-
-      else if (can1.rx_id == motor_r.rx_id)
-        motor_r.read(can1.rx_data);
+      if (can1.rx_id == fric_motor_l.rx_id) {
+        fric_motor_l.read(can1.rx_data, stamp_ms);
+      }
+      else if (can1.rx_id == fric_motor_r.rx_id) {
+        fric_motor_r.read(can1.rx_data, stamp_ms);
+      }
+      else if (can1.rx_id == trigger_motor.rx_id) {
+        trigger_motor.read(can1.rx_data, stamp_ms);
+      }
     }
 
     else if (hcan == &hcan2) {
